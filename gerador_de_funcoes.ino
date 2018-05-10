@@ -1,13 +1,17 @@
+/*
+
+A frequência pode ser editada através do valor subtraído da última execução "last"
+
+*/
+
 #include <Wire.h>
 #include <Adafruit_MCP4725.h>
 
-#define GERADOR 8
-
 Adafruit_MCP4725 dac;
 const float frequencia;
+const int amplitude_senoidal = 512;
 const int amplitude_quadrada = 500;
-const uint32_t amplitude_triangulo = 4096;
-const uint32_t amplitude_sawtooth = 4096;
+const uint32_t amplitude_serra = 4096;
 float somatorio = 0;
 uint32_t last = 0;
 
@@ -81,8 +85,6 @@ const PROGMEM uint16_t DACLookup_FullSine_9Bit[512] =
 
 void setup() {
   Serial.begin(9600);
-  pinMode(GERADOR, OUTPUT);
-
   // For Adafruit MCP4725A1 the address is 0x62 (default) or 0x63 (ADDR pin tied to VCC)
   // For MCP4725A0 the address is 0x60 or 0x61
   // For MCP4725A2 the address is 0x64 or 0x65
@@ -91,23 +93,27 @@ void setup() {
 
 void loop() {
   ondaSenoidal();
-  //ondaTriangular();
+  //denteSerra();
   //ondaQuadradaDAC();
-  //sawtooth();
 }
 
 void ondaSenoidal() {
     uint16_t i;
-
-    for (i = 0; i < 512; i++) {
-      dac.setVoltage(pgm_read_word(&(DACLookup_FullSine_9Bit[i])), false);
-      Serial.print(pgm_read_word(&(DACLookup_FullSine_9Bit[i])));
+    while(i < amplitude_senoidal){
+      if (micros()- last >= 1000) {
+        last = micros();
+        dac.setVoltage(pgm_read_word(&(DACLookup_FullSine_9Bit[i])), false);
+        i++;
+      }
     }
 }
 
 void ondaQuadradaDAC() {
-  for (int i = 0; i < 360; i++) {
-    float somatorio = (((amplitude_quadrada / 1) * (sin(i * 1 * (PI / 180))))
+    uint16_t i;
+    while(i < 360){
+      if (micros()- last >= 1000) {
+        last = micros();
+        float somatorio = (((amplitude_quadrada / 1) * (sin(i * 1 * (PI / 180))))
                        + ((amplitude_quadrada / 3) * (sin(i * 3 * (PI / 180))))
                        + ((amplitude_quadrada / 5) * (sin(i * 5 * (PI / 180))))
                        + ((amplitude_quadrada / 7) * (sin(i * 7 * (PI / 180))))
@@ -127,28 +133,27 @@ void ondaQuadradaDAC() {
                        + ((amplitude_quadrada / 35) * (sin(i * 35 * (PI / 180))))
                        + ((amplitude_quadrada / 37) * (sin(i * 37 * (PI / 180))))
                        + ((amplitude_quadrada / 39) * (sin(i * 39 * (PI / 180))))
-                       + ((amplitude_quadrada / 41) * (sin(i * 42 * (PI / 180))))
+                       + ((amplitude_quadrada / 41) * (sin(i * 41 * (PI / 180))))
                       );
-    dac.setVoltage(somatorio, false);
+        dac.setVoltage(somatorio, false);
+        i++;
+      }
   }
 }
 
-void ondaTriangular() {
-  uint32_t counter;
-  // Run through the full 12-bit scale for a triangle wave
-  for (counter = 0; counter < amplitude_triangulo; counter++) {
-    dac.setVoltage(counter, false);
-    //Serial.println(counter);
+void denteSerra() { 
+  uint16_t counter;
+  while(counter < amplitude_serra){
+    if (micros()- last >= 1000) {
+      last = micros();
+      dac.setVoltage(counter, false);
+      counter++;
+    }
   }
-  for (counter = amplitude_triangulo; counter > 0; counter--) {
-    dac.setVoltage(counter, false);
-  }
-}
-
-void sawtooth() {
-  uint32_t counter;
-  // Run through the full 12-bit scale for a triangle wave
-  for (counter = 0; counter < amplitude_sawtooth; counter++) {
-    dac.setVoltage(counter, false);
+  while(counter < amplitude_serra){
+    if (micros()- last >= 1000) {
+      dac.setVoltage(counter, false);
+      counter--;
+    }
   }
 }
