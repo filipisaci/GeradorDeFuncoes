@@ -7,6 +7,7 @@ Adafruit_MCP4725 dac;
 const float frequencia;
 const int amplitude = 500;
 const uint32_t amplitude_triangulo = 50;
+const uint32_t amplitude_sawtooth = 50;
 float somatorio = 0;
 
 const PROGMEM uint16_t DACLookup_FullSine_9Bit[512] =
@@ -91,6 +92,7 @@ void loop() {
   //ondaSenoidal();
   //ondaTriangular();
   //ondaQuadradaDAC();
+  sawtooth();
 }  
 
 void ondaQuadrada(){
@@ -150,3 +152,13 @@ void ondaTriangular() {
     }
 }
 
+
+void sawtooth() {
+    uint32_t counter;
+    // Run through the full 12-bit scale for a triangle wave
+    for (counter = 0; counter < amplitude_sawtooth; counter++) {
+      dac.setVoltage(counter, false);
+      Serial.println(counter);
+      delay(10);
+    }
+}
