@@ -152,7 +152,6 @@ void ondaTriangular() {
     }
 }
 
-
 void sawtooth() {
     uint32_t counter;
     // Run through the full 12-bit scale for a triangle wave
