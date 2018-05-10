@@ -5,10 +5,11 @@
 
 Adafruit_MCP4725 dac;
 const float frequencia;
-const int amplitude = 500;
-const uint32_t amplitude_triangulo = 50;
-const uint32_t amplitude_sawtooth = 50;
+const int amplitude_quadrada = 500;
+const uint32_t amplitude_triangulo = 4096;
+const uint32_t amplitude_sawtooth = 4096;
 float somatorio = 0;
+uint32_t last = 0;
 
 const PROGMEM uint16_t DACLookup_FullSine_9Bit[512] =
 {
@@ -50,27 +51,27 @@ const PROGMEM uint16_t DACLookup_FullSine_9Bit[512] =
   1453, 1429, 1406, 1382, 1358, 1334, 1311, 1288,
   1264, 1241, 1218, 1195, 1172, 1150, 1127, 1105,
   1083, 1060, 1039, 1017,  995,  974,  952,  931,
-   910,  889,  869,  848,  828,  808,  788,  768,
-   749,  729,  710,  691,  673,  654,  636,  618,
-   600,  582,  565,  548,  531,  514,  497,  481,
-   465,  449,  433,  418,  403,  388,  374,  359,
-   345,  331,  318,  304,  291,  279,  266,  254,
-   242,  230,  219,  208,  197,  186,  176,  166,
-   156,  146,  137,  128,  120,  111,  103,   96,
-    88,   81,   74,   68,   61,   55,   50,   44,
-    39,   35,   30,   26,   22,   19,   15,   12,
-    10,    8,    6,    4,    2,    1,    1,    0,
-     0,    0,    1,    1,    2,    4,    6,    8,
-    10,   12,   15,   19,   22,   26,   30,   35,
-    39,   44,   50,   55,   61,   68,   74,   81,
-    88,   96,  103,  111,  120,  128,  137,  146,
-   156,  166,  176,  186,  197,  208,  219,  230,
-   242,  254,  266,  279,  291,  304,  318,  331,
-   345,  359,  374,  388,  403,  418,  433,  449,
-   465,  481,  497,  514,  531,  548,  565,  582,
-   600,  618,  636,  654,  673,  691,  710,  729,
-   749,  768,  788,  808,  828,  848,  869,  889,
-   910,  931,  952,  974,  995, 1017, 1039, 1060,
+  910,  889,  869,  848,  828,  808,  788,  768,
+  749,  729,  710,  691,  673,  654,  636,  618,
+  600,  582,  565,  548,  531,  514,  497,  481,
+  465,  449,  433,  418,  403,  388,  374,  359,
+  345,  331,  318,  304,  291,  279,  266,  254,
+  242,  230,  219,  208,  197,  186,  176,  166,
+  156,  146,  137,  128,  120,  111,  103,   96,
+  88,   81,   74,   68,   61,   55,   50,   44,
+  39,   35,   30,   26,   22,   19,   15,   12,
+  10,    8,    6,    4,    2,    1,    1,    0,
+  0,    0,    1,    1,    2,    4,    6,    8,
+  10,   12,   15,   19,   22,   26,   30,   35,
+  39,   44,   50,   55,   61,   68,   74,   81,
+  88,   96,  103,  111,  120,  128,  137,  146,
+  156,  166,  176,  186,  197,  208,  219,  230,
+  242,  254,  266,  279,  291,  304,  318,  331,
+  345,  359,  374,  388,  403,  418,  433,  449,
+  465,  481,  497,  514,  531,  548,  565,  582,
+  600,  618,  636,  654,  673,  691,  710,  729,
+  749,  768,  788,  808,  828,  848,  869,  889,
+  910,  931,  952,  974,  995, 1017, 1039, 1060,
   1083, 1105, 1127, 1150, 1172, 1195, 1218, 1241,
   1264, 1288, 1311, 1334, 1358, 1382, 1406, 1429,
   1453, 1478, 1502, 1526, 1550, 1575, 1599, 1624,
@@ -89,75 +90,65 @@ void setup() {
 }
 
 void loop() {
-  //ondaSenoidal();
+  ondaSenoidal();
   //ondaTriangular();
   //ondaQuadradaDAC();
-  sawtooth();
-}  
-
-void ondaQuadrada(){
-  tone(GERADOR, frequencia);
+  //sawtooth();
 }
 
 void ondaSenoidal() {
-  uint16_t i;
-  
-  for (i = 0; i < 512; i++) {
-        dac.setVoltage(pgm_read_word(&(DACLookup_FullSine_9Bit[i])), false);
-        Serial.println(pgm_read_word(&(DACLookup_FullSine_9Bit[i])));
-        //delay(); //definde a frequencia
-      }
+    uint16_t i;
+
+    for (i = 0; i < 512; i++) {
+      dac.setVoltage(pgm_read_word(&(DACLookup_FullSine_9Bit[i])), false);
+      Serial.print(pgm_read_word(&(DACLookup_FullSine_9Bit[i])));
+    }
 }
 
 void ondaQuadradaDAC() {
   for (int i = 0; i < 360; i++) {
-    float somatorio = (((amplitude/1) * (sin(i * 1 * (PI/180))))
-    + ((amplitude/3) * (sin(i * 3 * (PI/180))))
-    + ((amplitude/5) * (sin(i * 5 * (PI/180))))
-    + ((amplitude/7) * (sin(i * 7 * (PI/180))))
-    + ((amplitude/9) * (sin(i * 9 * (PI/180))))
-    + ((amplitude/11) * (sin(i * 11 * (PI/180))))
-    + ((amplitude/13) * (sin(i * 13 * (PI/180))))
-    + ((amplitude/15) * (sin(i * 15 * (PI/180))))
-    + ((amplitude/17) * (sin(i * 17 * (PI/180))))
-    + ((amplitude/19) * (sin(i * 19 * (PI/180))))
-    + ((amplitude/21) * (sin(i * 21 * (PI/180))))
-    + ((amplitude/23) * (sin(i * 23 * (PI/180))))
-    + ((amplitude/25) * (sin(i * 25 * (PI/180))))
-    + ((amplitude/27) * (sin(i * 27 * (PI/180))))
-    + ((amplitude/29) * (sin(i * 29 * (PI/180))))
-    + ((amplitude/31) * (sin(i * 31 * (PI/180))))
-    + ((amplitude/33) * (sin(i * 33 * (PI/180))))
-    + ((amplitude/35) * (sin(i * 35 * (PI/180))))
-    + ((amplitude/37) * (sin(i * 37 * (PI/180))))
-    + ((amplitude/39) * (sin(i * 39 * (PI/180))))
-    + ((amplitude/41) * (sin(i * 42 * (PI/180))))
-    );
+    float somatorio = (((amplitude_quadrada / 1) * (sin(i * 1 * (PI / 180))))
+                       + ((amplitude_quadrada / 3) * (sin(i * 3 * (PI / 180))))
+                       + ((amplitude_quadrada / 5) * (sin(i * 5 * (PI / 180))))
+                       + ((amplitude_quadrada / 7) * (sin(i * 7 * (PI / 180))))
+                       + ((amplitude_quadrada / 9) * (sin(i * 9 * (PI / 180))))
+                       + ((amplitude_quadrada / 11) * (sin(i * 11 * (PI / 180))))
+                       + ((amplitude_quadrada / 13) * (sin(i * 13 * (PI / 180))))
+                       + ((amplitude_quadrada / 15) * (sin(i * 15 * (PI / 180))))
+                       + ((amplitude_quadrada / 17) * (sin(i * 17 * (PI / 180))))
+                       + ((amplitude_quadrada / 19) * (sin(i * 19 * (PI / 180))))
+                       + ((amplitude_quadrada / 21) * (sin(i * 21 * (PI / 180))))
+                       + ((amplitude_quadrada / 23) * (sin(i * 23 * (PI / 180))))
+                       + ((amplitude_quadrada / 25) * (sin(i * 25 * (PI / 180))))
+                       + ((amplitude_quadrada / 27) * (sin(i * 27 * (PI / 180))))
+                       + ((amplitude_quadrada / 29) * (sin(i * 29 * (PI / 180))))
+                       + ((amplitude_quadrada / 31) * (sin(i * 31 * (PI / 180))))
+                       + ((amplitude_quadrada / 33) * (sin(i * 33 * (PI / 180))))
+                       + ((amplitude_quadrada / 35) * (sin(i * 35 * (PI / 180))))
+                       + ((amplitude_quadrada / 37) * (sin(i * 37 * (PI / 180))))
+                       + ((amplitude_quadrada / 39) * (sin(i * 39 * (PI / 180))))
+                       + ((amplitude_quadrada / 41) * (sin(i * 42 * (PI / 180))))
+                      );
     dac.setVoltage(somatorio, false);
-    Serial.println(somatorio);
-    //delay();
   }
 }
 
 void ondaTriangular() {
-    uint32_t counter;
-    // Run through the full 12-bit scale for a triangle wave
-    for (counter = 0; counter < amplitude_triangulo; counter++) {
-      dac.setVoltage(counter, false);
-      Serial.println(counter);
-    }
-    for (counter = amplitude_triangulo; counter > 0; counter--) {
-      dac.setVoltage(counter, false);
-      Serial.println(counter);
-    }
+  uint32_t counter;
+  // Run through the full 12-bit scale for a triangle wave
+  for (counter = 0; counter < amplitude_triangulo; counter++) {
+    dac.setVoltage(counter, false);
+    //Serial.println(counter);
+  }
+  for (counter = amplitude_triangulo; counter > 0; counter--) {
+    dac.setVoltage(counter, false);
+  }
 }
 
 void sawtooth() {
-    uint32_t counter;
-    // Run through the full 12-bit scale for a triangle wave
-    for (counter = 0; counter < amplitude_sawtooth; counter++) {
-      dac.setVoltage(counter, false);
-      Serial.println(counter);
-      delay(10);
-    }
+  uint32_t counter;
+  // Run through the full 12-bit scale for a triangle wave
+  for (counter = 0; counter < amplitude_sawtooth; counter++) {
+    dac.setVoltage(counter, false);
+  }
 }
